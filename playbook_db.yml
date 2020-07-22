@@ -1,0 +1,70 @@
+---
+- hosts: db
+  remote_user: root
+  gather_facts: yes
+  become: yes
+  ignore_errors: yes
+  tasks:
+  #- name: Install Python
+  #  raw: apt -y update && apt install -y python-minimal
+    #when: check_python.rc != 0
+  #- name: add mongo ppa key
+    #sudo: yes
+    #apt_key: >
+     #keyserver=hkp://keyserver.ubuntu.com:80
+     #id=7F0CEB10
+    #state=present
+
+  #- name: add mongo sources list
+    #sudo: yes
+    #lineinfile: >
+     #line="deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse"
+     #dest=/etc/apt/sources.list.d/mongodb.list
+    #state=present
+    #create=yes
+
+  #- apt_repository:
+    #  repo: "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse"
+   #   state: present
+
+  #- name: install mongo
+    #sudo: yes
+   # apt: name=mongodb-org state=latest update_cache=yes
+  #- name: Import the public key used by the package management system
+   # apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=7F0CEB10 state=present
+
+  - name: A hackey way of getting the public key
+    shell: sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys D68FA50FEA312927
+
+  #- name: Add MongoDB repository
+    #apt_repository: "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen" 
+    #state: present
+    #update_cache: True
+  - name: MongoDB - Add repository
+    apt_repository:
+      filename: '/etc/apt/sources.list.d/mongodb-org-3.2.list'
+      repo: 'deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse'
+      state: present
+      update_cache: yes
+  #- name: import key
+    #apt_key:
+       #url: https://www.mongodb.org/static/pgp/server-3.2.asc
+       #state: present
+  #- name: add mongodb repo
+    #apt_repository: repo='deb http://repo.mongodb.org/apt/ubuntu xenial/mongo-org/3.2 multiverse' state=present update_cache=yes
+  
+  - name: install mongodb
+    apt: pkg=mongodb-org state=latest update_cache=yes
+    notify:
+    - start mongodb
+ 
+  - name: Binding IP - conf file
+    shell: sudo sed -i "s,\\(^[[:blank:]]*bindIp:\\) .*,\\1 0.0.0.0," /etc/mongod.conf
+
+
+  handlers:
+  - name: start mongodb
+    service: name=mongod state=started
+
+  - name: enable mongodb
+    service: name=mongod state=enabled

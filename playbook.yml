@@ -1,0 +1,79 @@
+---
+- hosts: app
+  gather_facts: yes
+  become: true
+  ignore_errors: yes
+  tasks:
+  - name: install nginx
+    apt: pkg=nginx state=present
+    notify:
+    - restart nginx
+
+  - name: Enable nginx during boot
+    service: name=nginx  state=started enabled=yes
+  
+  - name: install git
+    apt: name=git state=present
+
+  - name: add apt key for nodesource
+    apt_key: url=https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+
+  - name: curl Node
+    shell: | 
+      curl http://deb.nodesource.com/setup_10.x | sudo -E bash -
+
+  - name: install nodejs
+    apt: name=nodejs state=present
+
+  - name: install NPM
+    shell: npm install
+    args:
+      chdir: /home/ubuntu
+
+  - name: Install pm2
+    npm:
+      name: pm2
+      global: yes
+
+  - name: create local environment variable
+    shell: |
+     sudo echo 'export DB_HOST=mongodb://192.168.33.12:27017/posts' >> /home/ubuntu/.bashrc
+
+  - name: copy correct reverse proxy config
+    shell: |
+      sudo rm /etc/nginx/sites-available/default
+      sudo cp /vagrant/default.conf /etc/nginx/sites-available/default
+
+
+  - name: Change the working directory to somedir/ before executing the command.
+    shell: node seed.js 
+    args:
+       chdir: /home/ubuntu/app/seeds
+  
+  - name: start app -shell
+    shell:
+      cmd: . ~/.bashrc && forever start app.js
+      chdir: /home/ubuntu/app
+  - name: node seeds -shell
+    shell:
+      cmd: . ~root/.bashrc && node seed.js
+      chdir: /home/ubuntu/app/seeds
+
+  - name: nginx restart
+    shell: sudo service nginx restart
+
+  - name: pm2 stop
+    shell: pm2 stop app.js
+    args:
+       chdir: /home/ubuntu/app
+
+  - name: start pm2
+    shell: pm2 start app.js
+    args:
+       chdir: /home/ubuntu/app  
+  
+  - name: nginx restart
+    shell: sudo service nginx restart
+
+  
+
