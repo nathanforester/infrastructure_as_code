@@ -4,16 +4,11 @@
   become: true
   ignore_errors: yes
   tasks:
+  
   - name: install nginx
     apt: pkg=nginx state=present
     notify:
     - restart nginx
-
-  - name: Enable nginx during boot
-    service: name=nginx  state=started enabled=yes
-  
-  - name: install git
-    apt: name=git state=present
 
   - name: add apt key for nodesource
     apt_key: url=https://deb.nodesource.com/gpgkey/nodesource.gpg.key
@@ -41,36 +36,31 @@
 
   - name: copy correct reverse proxy config
     shell: |
-      sudo rm /etc/nginx/sites-available/default
-      sudo cp /vagrant/default.conf /etc/nginx/sites-available/default
+      sudo cp /home/ubuntu/infrastructure_as_code/nginx.conf /etc/nginx/
 
 
-  - name: Change the working directory to somedir/ before executing the command.
-    shell: node seed.js 
-    args:
-       chdir: /home/ubuntu/app/seeds
+#   - name: Change the working directory to somedir/ before executing the command.
+#     shell: node seed.js 
+#     args:
+#        chdir: /home/ubuntu/app/seeds
   
-  - name: start app -shell
-    shell:
-      cmd: . ~/.bashrc && forever start app.js
-      chdir: /home/ubuntu/app
-  - name: node seeds -shell
-    shell:
-      cmd: . ~root/.bashrc && node seed.js
-      chdir: /home/ubuntu/app/seeds
+#   - name: start app -shell
+#     shell:
+#       cmd: . ~/.bashrc && forever start app.js
+#       chdir: /home/ubuntu/app
+#   - name: node seeds -shell
+#     shell:
+#       cmd: . ~root/.bashrc && node seed.js
+#       chdir: /home/ubuntu/app/seeds
 
-  - name: nginx restart
-    shell: sudo service nginx restart
+#   - name: nginx restart
+#     shell: sudo service nginx restart
 
   - name: pm2 stop
-    shell: pm2 stop app.js
-    args:
-       chdir: /home/ubuntu/app
+    shell: pm2 stop /home/ubuntu/infrastructure_as_code/app/app.js
 
   - name: start pm2
-    shell: pm2 start app.js
-    args:
-       chdir: /home/ubuntu/app  
+    shell: pm2 start /home/ubuntu/infrastructure_as_code/app/app.js
   
   - name: nginx restart
     shell: sudo service nginx restart
